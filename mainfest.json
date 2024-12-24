@@ -1,0 +1,21 @@
+{
+    "name": "Sholawat App",
+    "short_name": "Sholawat",
+    "description": "Aplikasi kumpulan lirik sholawat",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4F46E5",
+    "icons": [
+      {
+        "src": "/icons/adaptive-icon.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
