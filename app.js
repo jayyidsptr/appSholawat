@@ -1,27 +1,38 @@
-let deferredPrompt;
-
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-        .then(registration => console.log('ServiceWorker registered'))
-        .catch(err => console.log('ServiceWorker registration failed:', err));
+    window.addEventListener('load', () => {
+        navigator.serviceWorker
+            .register('./sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+    });
 }
 
 // Install button logic
+let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     const installButton = document.getElementById('installButton');
-    installButton.classList.remove('hidden');
+    if (installButton) {
+        installButton.classList.remove('hidden');
+    }
 });
 
-document.getElementById('installButton').addEventListener('click', async () => {
+document.getElementById('installButton')?.addEventListener('click', async () => {
     if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         console.log(`User response to install prompt: ${outcome}`);
         deferredPrompt = null;
-        document.getElementById('installButton').classList.add('hidden');
+        const installButton = document.getElementById('installButton');
+        if (installButton) {
+            installButton.classList.add('hidden');
+        }
     }
 });
 
