@@ -82,13 +82,14 @@ function renderCategories(categories) {
     select.innerHTML = '<option value="">Semua Kategori</option>';
     
     // Sort categories alphabetically
-    categories.sort((a, b) => a.nama.localeCompare(b.nama));
+    // Since we have strings, we can sort them directly
+    categories.sort((a, b) => a.localeCompare(b));
     
     // Add categories to select
     categories.forEach(category => {
         const option = document.createElement('option');
-        option.value = category.nama;      // Using nama for the value
-        option.textContent = category.nama; // Using nama for display text
+        option.value = category;      // The category is already a string
+        option.textContent = category; // Use the string directly
         select.appendChild(option);
     });
 }
@@ -122,7 +123,7 @@ async function fetchSholawat(search = '', category = '') {
         }
         
         if (category?.trim()) {
-            // Using the correct parameter name for category
+            // Category is now a direct string value
             params.append('category', category.trim());
         }
         
@@ -130,6 +131,7 @@ async function fetchSholawat(search = '', category = '') {
             url += `?${params.toString()}`;
         }
         
+        console.log('Fetching sholawat from:', url);
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error('Network response was not ok');
