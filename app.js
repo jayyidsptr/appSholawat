@@ -56,7 +56,7 @@ async function fetchLatestSholawat() {
 // Categories Functions
 async function fetchCategories() {
     try {
-        const response = await fetch(`${API_BASE_URL}/categories`);
+        const response = await fetch(`${API_BASE_URL}/sholawat/categories`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
