@@ -1,6 +1,6 @@
 
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
+    navigator.serviceWorker.register('service-worker.js')
         .then(registration => {
             console.log('Service Worker registered with scope:', registration.scope);
         })
@@ -8,6 +8,32 @@ if ('serviceWorker' in navigator) {
             console.log('Service Worker registration failed:', error);
         });
   }
+
+  // PWA Install Handler
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent Chrome 67 and earlier from automatically showing the prompt
+    e.preventDefault();
+    // Stash the event so it can be triggered later
+    deferredPrompt = e;
+    // Show the install button
+    const installButton = document.getElementById('installButton');
+    if (installButton) {
+        installButton.classList.remove('hidden');
+        installButton.addEventListener('click', async () => {
+            // Hide the app provided install promotion
+            installButton.classList.add('hidden');
+            // Show the install prompt
+            deferredPrompt.prompt();
+            // Wait for the user to respond to the prompt
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            // We've used the prompt, and can't use it again, throw it away
+            deferredPrompt = null;
+        });
+    }
+});
 
 // API Functions
 const API_BASE_URL = 'https://db-sholawat.vercel.app/api';
@@ -24,6 +50,37 @@ async function fetchLatestSholawat() {
     } catch (error) {
         console.error('Error fetching latest sholawat:', error);
     }
+}
+
+// Categories Functions
+// Categories Functions
+async function fetchCategories() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/categories`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const categories = await response.json();
+        renderCategories(categories);
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        showError('Gagal mengambil data kategori');
+    }
+}
+
+function renderCategories(categories) {
+    const select = document.getElementById('categoryFilter');
+    select.innerHTML = '<option value="">Semua Kategori</option>';
+
+    // Sort categories by name
+    categories.sort((a, b) => a.nama_kategori.localeCompare(b.nama_kategori));
+
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.nama_kategori; // Using nama_kategori as value for the filter
+        option.textContent = category.nama_kategori;
+        select.appendChild(option);
+    });
 }
 
 function renderLatestSholawat(sholawatList) {
@@ -48,17 +105,37 @@ async function fetchSholawat(search = '', category = '') {
     showLoading();
     try {
         let url = `${API_BASE_URL}/sholawat`;
-        const params = new URLSearchParams();
-        if (search) params.append('search', search);
-        if (category) params.append('category', category);
-        if (params.toString()) url += `?${params.toString()}`;
+        
+        // Handle search parameter
+        if (search?.trim()) {
+            url = `${API_BASE_URL}/sholawat?search=${encodeURIComponent(search.trim())}`;
+        }
+        
+        // Handle category parameter - this overrides search if both are present
+        if (category?.trim()) {
+            url = `${API_BASE_URL}/sholawat?category=${encodeURIComponent(category.trim())}`;
+        }
 
         const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        
         const data = await response.json();
+        
+        // Update URL without refreshing page
+        const newUrl = new URL(window.location);
+        if (search) newUrl.searchParams.set('search', search);
+        else newUrl.searchParams.delete('search');
+        if (category) newUrl.searchParams.set('category', category);
+        else newUrl.searchParams.delete('category');
+        window.history.pushState({}, '', newUrl);
+        
         renderSholawatList(data);
     } catch (error) {
         console.error('Error fetching sholawat:', error);
         showError('Gagal mengambil data sholawat');
+        renderSholawatList([]);
     } finally {
         hideLoading();
     }
@@ -204,8 +281,44 @@ async function showDetail(id) {
 }
 
 function showError(message) {
-    // Implementasi toast notification atau alert yang lebih bagus
-    alert(message);
+    const existingError = document.querySelector('.error-toast');
+    if (existingError) {
+        existingError.remove();
+    }
+
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-toast fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+    errorDiv.innerHTML = `
+        <div class="flex items-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(errorDiv);
+    
+    // Add fade-in animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(100%); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        errorDiv.style.opacity = '0';
+        errorDiv.style.transform = 'translateY(100%)';
+        errorDiv.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => errorDiv.remove(), 300);
+    }, 3000);
 }
 
 function closeModal() {
