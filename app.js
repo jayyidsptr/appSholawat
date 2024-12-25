@@ -53,14 +53,20 @@ async function fetchLatestSholawat() {
 }
 
 // Categories Functions
-// Categories Functions
 async function fetchCategories() {
     try {
         const response = await fetch(`${API_BASE_URL}/categories`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const categories = await response.json();
+        console.log('Categories data:', categories);
+        
+        if (!Array.isArray(categories)) {
+            throw new Error('Invalid categories data format');
+        }
+        
         renderCategories(categories);
     } catch (error) {
         console.error('Error fetching categories:', error);
@@ -70,15 +76,19 @@ async function fetchCategories() {
 
 function renderCategories(categories) {
     const select = document.getElementById('categoryFilter');
+    if (!select) return;
+    
+    // Reset select content
     select.innerHTML = '<option value="">Semua Kategori</option>';
-
-    // Sort categories by name
-    categories.sort((a, b) => a.nama_kategori.localeCompare(b.nama_kategori));
-
+    
+    // Sort categories alphabetically
+    categories.sort((a, b) => a.nama.localeCompare(b.nama));
+    
+    // Add categories to select
     categories.forEach(category => {
         const option = document.createElement('option');
-        option.value = category.nama_kategori; // Using nama_kategori as value for the filter
-        option.textContent = category.nama_kategori;
+        option.value = category.nama;      // Using nama for the value
+        option.textContent = category.nama; // Using nama for display text
         select.appendChild(option);
     });
 }
@@ -105,32 +115,27 @@ async function fetchSholawat(search = '', category = '') {
     showLoading();
     try {
         let url = `${API_BASE_URL}/sholawat`;
+        const params = new URLSearchParams();
         
-        // Handle search parameter
         if (search?.trim()) {
-            url = `${API_BASE_URL}/sholawat?search=${encodeURIComponent(search.trim())}`;
+            params.append('search', search.trim());
         }
         
-        // Handle category parameter - this overrides search if both are present
         if (category?.trim()) {
-            url = `${API_BASE_URL}/sholawat?category=${encodeURIComponent(category.trim())}`;
+            // Using the correct parameter name for category
+            params.append('category', category.trim());
         }
-
+        
+        if (params.toString()) {
+            url += `?${params.toString()}`;
+        }
+        
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
         
         const data = await response.json();
-        
-        // Update URL without refreshing page
-        const newUrl = new URL(window.location);
-        if (search) newUrl.searchParams.set('search', search);
-        else newUrl.searchParams.delete('search');
-        if (category) newUrl.searchParams.set('category', category);
-        else newUrl.searchParams.delete('category');
-        window.history.pushState({}, '', newUrl);
-        
         renderSholawatList(data);
     } catch (error) {
         console.error('Error fetching sholawat:', error);
