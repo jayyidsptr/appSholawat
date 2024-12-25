@@ -1,40 +1,13 @@
-// Service Worker Registration
+
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker
-            .register('./sw.js')
-            .then(registration => {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            })
-            .catch(err => {
-                console.log('ServiceWorker registration failed: ', err);
-            });
-    });
-}
-
-// Install button logic
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installButton = document.getElementById('installButton');
-    if (installButton) {
-        installButton.classList.remove('hidden');
-    }
-});
-
-document.getElementById('installButton')?.addEventListener('click', async () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log(`User response to install prompt: ${outcome}`);
-        deferredPrompt = null;
-        const installButton = document.getElementById('installButton');
-        if (installButton) {
-            installButton.classList.add('hidden');
-        }
-    }
-});
+    navigator.serviceWorker.register('sw.js')
+        .then(registration => {
+            console.log('Service Worker registered with scope:', registration.scope);
+        })
+        .catch(error => {
+            console.log('Service Worker registration failed:', error);
+        });
+  }
 
 // API Functions
 const API_BASE_URL = 'https://db-sholawat.vercel.app/api';
