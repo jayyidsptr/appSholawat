@@ -151,16 +151,16 @@ async function fetchSholawat(search = '', category = '') {
 }
 
 async function renderSholawatList(sholawatList) {
-    // Determine which container to use based on active tab
-    const activeTab = document.querySelector('.nav-tab.active');
-    const container = activeTab.id === 'bookmarksTab' 
+    // Determine which container to use based on visibility
+    const isBookmarkView = document.getElementById('bookmarksContent').classList.contains('hidden') === false;
+    const container = isBookmarkView 
         ? document.getElementById('bookmarksList')
         : document.getElementById('sholawatList');
     
     container.innerHTML = '';
 
     if (sholawatList.length === 0) {
-        const emptyMessage = activeTab.id === 'bookmarksTab'
+        const emptyMessage = isBookmarkView
             ? 'Tidak ada sholawat yang disimpan'
             : 'Tidak ada sholawat ditemukan';
             
@@ -170,7 +170,7 @@ async function renderSholawatList(sholawatList) {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-gray-900">${emptyMessage}</h3>
-                ${activeTab.id === 'bookmarksTab' ? `
+                ${isBookmarkView ? `
                     <p class="mt-1 text-sm text-gray-500">Klik ikon bookmark pada sholawat untuk menyimpannya</p>
                 ` : ''}
             </div>
@@ -240,17 +240,38 @@ async function renderSholawatList(sholawatList) {
     }
 }
 
-// Update the bookmarks tab click handler
-document.getElementById('bookmarksTab').addEventListener('click', async () => {
-    const bookmarks = await bookmarksManager.getBookmarks();
-    renderSholawatList(bookmarks);
-});
+// Event Listeners for Navigation
+document.addEventListener('DOMContentLoaded', function() {
+    const homeLink = document.getElementById('homeLink');
+    const bookmarksTab = document.getElementById('bookmarksTab');
+    const homeContent = document.getElementById('homeContent');
+    const bookmarksContent = document.getElementById('bookmarksContent');
 
-// Update the home tab click handler to show all sholawat
-document.getElementById('homeTab').addEventListener('click', () => {
-    const search = document.getElementById('searchInput').value;
-    const category = document.getElementById('categoryFilter').value;
-    fetchSholawat(search, category);
+    // Home link click handler
+    homeLink.addEventListener('click', function() {
+        homeContent.classList.remove('hidden');
+        bookmarksContent.classList.add('hidden');
+        // Refresh home content
+        fetchLatestSholawat();
+        fetchSholawat();
+    });
+
+    // Bookmarks tab click handler
+    bookmarksTab.addEventListener('click', async function() {
+        const isBookmarkView = !bookmarksContent.classList.contains('hidden');
+        
+        if (!isBookmarkView) {
+            homeContent.classList.add('hidden');
+            bookmarksContent.classList.remove('hidden');
+            const bookmarks = await bookmarksManager.getBookmarks();
+            renderSholawatList(bookmarks);
+        } else {
+            homeContent.classList.remove('hidden');
+            bookmarksContent.classList.add('hidden');
+            fetchLatestSholawat();
+            fetchSholawat();
+        }
+    });
 });
 
 // Detail Modal Functions
