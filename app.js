@@ -151,16 +151,28 @@ async function fetchSholawat(search = '', category = '') {
 }
 
 async function renderSholawatList(sholawatList) {
-    const container = document.getElementById('sholawatList');
+    // Determine which container to use based on active tab
+    const activeTab = document.querySelector('.nav-tab.active');
+    const container = activeTab.id === 'bookmarksTab' 
+        ? document.getElementById('bookmarksList')
+        : document.getElementById('sholawatList');
+    
     container.innerHTML = '';
 
     if (sholawatList.length === 0) {
+        const emptyMessage = activeTab.id === 'bookmarksTab'
+            ? 'Tidak ada sholawat yang disimpan'
+            : 'Tidak ada sholawat ditemukan';
+            
         container.innerHTML = `
             <div class="col-span-full text-center py-12">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada sholawat ditemukan</h3>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">${emptyMessage}</h3>
+                ${activeTab.id === 'bookmarksTab' ? `
+                    <p class="mt-1 text-sm text-gray-500">Klik ikon bookmark pada sholawat untuk menyimpannya</p>
+                ` : ''}
             </div>
         `;
         return;
@@ -205,6 +217,17 @@ async function renderSholawatList(sholawatList) {
                 bookmarkBtn.querySelector('svg').classList.remove('text-emerald-600');
                 bookmarkBtn.querySelector('svg').classList.add('text-gray-400');
                 bookmarkBtn.querySelector('svg').setAttribute('fill', 'none');
+                
+                // If we're in bookmarks tab, remove the card
+                if (activeTab.id === 'bookmarksTab') {
+                    card.classList.add('opacity-0');
+                    setTimeout(() => {
+                        card.remove();
+                        if (container.children.length === 0) {
+                            renderSholawatList([]);
+                        }
+                    }, 300);
+                }
             } else {
                 await bookmarksManager.addBookmark(sholawat);
                 bookmarkBtn.querySelector('svg').classList.add('text-emerald-600');
@@ -216,6 +239,19 @@ async function renderSholawatList(sholawatList) {
         container.appendChild(card);
     }
 }
+
+// Update the bookmarks tab click handler
+document.getElementById('bookmarksTab').addEventListener('click', async () => {
+    const bookmarks = await bookmarksManager.getBookmarks();
+    renderSholawatList(bookmarks);
+});
+
+// Update the home tab click handler to show all sholawat
+document.getElementById('homeTab').addEventListener('click', () => {
+    const search = document.getElementById('searchInput').value;
+    const category = document.getElementById('categoryFilter').value;
+    fetchSholawat(search, category);
+});
 
 // Detail Modal Functions
 async function showDetail(id) {
@@ -365,21 +401,6 @@ function showError(message) {
     }, 3000);
 }
 
-// Bookmarks Tab
-function addBookmarksTab() {
-    const nav = document.querySelector('nav .flex-1');
-    nav.innerHTML += `
-        <button id="showBookmarks" class="ml-4 px-4 py-2 text-white hover:bg-emerald-700 rounded-lg transition-colors duration-200">
-            Bookmarks
-        </button>
-    `;
-
-    document.getElementById('showBookmarks').addEventListener('click', async () => {
-        const bookmarks = await bookmarksManager.getBookmarks();
-        renderSholawatList(bookmarks);
-    });
-}
-
 // Event Listeners
 document.getElementById('searchInput').addEventListener('input', debounce((e) => {
     const category = document.getElementById('categoryFilter').value;
@@ -409,5 +430,4 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchLatestSholawat();
     fetchCategories();
     fetchSholawat();
-    addBookmarksTab();
 });
