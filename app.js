@@ -40,7 +40,7 @@ async function fetchLatestSholawat() {
         const response = await fetch(`${API_BASE_URL}/sholawat`);
         const data = await response.json();
         const latestSholawat = data
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .sort((a, b) => new Date(b.id) - new Date(a.id))
             .slice(0, 3);
         renderLatestSholawat(latestSholawat);
     } catch (error) {
@@ -151,6 +151,11 @@ async function fetchSholawat(search = '', category = '') {
 }
 
 async function renderSholawatList(sholawatList) {
+    // Sort the list alphabetically by title
+    const sortedList = [...sholawatList].sort((a, b) => 
+        a.judul.toLowerCase().localeCompare(b.judul.toLowerCase(), 'id')
+    );
+
     // Determine which container to use based on visibility
     const isBookmarkView = document.getElementById('bookmarksContent').classList.contains('hidden') === false;
     const container = isBookmarkView 
@@ -159,7 +164,7 @@ async function renderSholawatList(sholawatList) {
     
     container.innerHTML = '';
 
-    if (sholawatList.length === 0) {
+    if (sortedList.length === 0) {
         const emptyMessage = isBookmarkView
             ? 'Tidak ada sholawat yang disimpan'
             : 'Tidak ada sholawat ditemukan';
@@ -178,7 +183,7 @@ async function renderSholawatList(sholawatList) {
         return;
     }
 
-    for (const sholawat of sholawatList) {
+    for (const sholawat of sortedList) {
         const isBookmarked = await bookmarksManager.isBookmarked(sholawat.id);
         
         const card = document.createElement('div');
@@ -219,7 +224,7 @@ async function renderSholawatList(sholawatList) {
                 bookmarkBtn.querySelector('svg').setAttribute('fill', 'none');
                 
                 // If we're in bookmarks tab, remove the card
-                if (activeTab.id === 'bookmarksTab') {
+                if (isBookmarkView) {
                     card.classList.add('opacity-0');
                     setTimeout(() => {
                         card.remove();
