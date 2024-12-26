@@ -1,280 +1,171 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no"
-    />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>E-Sholawat</title>
-
+    
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#10B981" />
+    <meta name="theme-color" content="#10B981">
     <link rel="icon" href="favicon.png?fit=32%2C32&#038;ssl=1" sizes="32x32" />
-    <link
-      rel="icon"
-      href="favicon.png?fit=120%2C120&#038;ssl=1"
-      sizes="192x192"
-    />
+    <link rel="icon" href="favicon.png?fit=120%2C120&#038;ssl=1" sizes="192x192" />
     <link rel="apple-touch-icon" href="favicon.png?fit=120%2C120&#038;ssl=1" />
-    <link rel="manifest" href="manifest.json" />
+    <link rel="manifest" href="manifest.json">
 
     <!-- App Description -->
-    <meta name="description" content="Aplikasi kumpulan lirik sholawat" />
+    <meta name="description" content="Aplikasi kumpulan lirik sholawat">
 
     <!-- External Resources -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-      .arabic-text {
-        font-family: "Noto Naskh Arabic", serif;
-      }
-
-      @supports (-webkit-touch-callout: none) {
-        .min-h-screen {
-          min-height: -webkit-fill-available;
+        .arabic-text {
+            font-family: 'Noto Naskh Arabic', serif;
         }
-      }
-
-      .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-      .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* Active tab styles */
-      .nav-tab.active {
-        background-color: rgba(255, 255, 255, 0.1);
-        border-bottom: 2px solid white;
-      }
+        
+        /* Add iOS specific styles */
+        @supports (-webkit-touch-callout: none) {
+            .min-h-screen {
+                min-height: -webkit-fill-available;
+            }
+        }
+        
+        /* Hide scrollbar for iOS */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
     </style>
-  </head>
-  <body class="bg-gray-50">
+</head>
+<body class="bg-gray-50">
     <!-- Header -->
     <header class="bg-emerald-600 text-white sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16 items-center">
-          <div class="flex-1 flex items-center space-x-6">
-            <button
-              id="homeLink"
-              class="text-xl font-bold hover:text-emerald-100 transition-colors duration-200"
-            >
-              E-Sholawat
-            </button>
-            <button
-              id="bookmarksTab"
-              class="nav-tab flex items-center px-4 py-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
-            >
-              <svg
-                class="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                />
-              </svg>
-              Bookmark
-            </button>
-          </div>
-          <div class="flex items-center space-x-4">
-            <button
-              id="installButton"
-              class="hidden px-4 py-2 bg-white text-emerald-600 rounded-md font-medium hover:bg-emerald-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-            >
-              Install App
-            </button>
-          </div>
-        </div>
-      </div>
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-1 flex items-center">
+                    <h1 class="text-xl font-bold">E-Sholawat</h1>
+                </div>
+                <div class="flex items-center">
+                    <button id="bookmarksTab" 
+                            class="px-4 py-2 bg-white text-emerald-600 rounded-md font-medium hover:bg-emerald-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                        Bookmarks
+                    </button>
+                </div>
+            </div>
+        </nav>
     </header>
 
-    <!-- Content Sections -->
-    <div id="homeContent">
-      <!-- Hero Section with Latest Sholawat -->
-      <div
-        class="bg-gradient-to-b from-emerald-600 to-emerald-500 text-white py-12"
-      >
+    <!-- Hero Section with Latest Sholawat -->
+    <div class="bg-gradient-to-b from-emerald-600 to-emerald-500 text-white py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold mb-4">Sholawat Terbaru</h2>
-            <p class="text-emerald-100">
-              Kumpulan lirik sholawat terbaru yang ditambahkan
-            </p>
-          </div>
-          <div
-            id="latestSholawat"
-            class="grid grid-cols-1 md:grid-cols-3 gap-6"
-          >
-            <!-- Latest sholawat cards will be inserted here -->
-          </div>
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-4">Sholawat Terbaru</h2>
+                <p class="text-emerald-100">Kumpulan lirik sholawat terbaru yang ditambahkan</p>
+            </div>
+            <div id="latestSholawat" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Latest sholawat cards will be inserted here -->
+            </div>
         </div>
-      </div>
+    </div>
 
-      <!-- Search Section -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
+    <!-- Search Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
         <div class="bg-white rounded-xl shadow-lg p-6">
-          <div class="flex flex-col md:flex-row gap-4">
-            <div class="flex-1">
-              <div class="relative">
-                <input
-                  type="text"
-                  id="searchInput"
-                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Cari sholawat..."
-                />
-                <svg
-                  class="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <div class="relative">
+                        <input type="text" id="searchInput" 
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+                               placeholder="Cari sholawat...">
+                        <svg class="absolute left-3 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="w-full md:w-48">
+                    <label for="categoryFilter" class="sr-only">Filter Kategori</label>
+                    <div class="relative">
+                        <select id="categoryFilter" 
+                                name="category"
+                                aria-label="Filter berdasarkan kategori"
+                                class="w-full px-4 py-3 pr-8 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white cursor-pointer">
+                            <option value="">Semua Kategori</option>
+                        </select>
+                        <!-- Custom arrow icon -->
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="w-full md:w-48">
-              <select
-                id="categoryFilter"
-                class="w-full px-4 py-3 pr-8 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-              >
-                <option value="">Semua Kategori</option>
-              </select>
-            </div>
-          </div>
         </div>
-      </div>
-
-      <!-- Main Content -->
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-12">
-        <div
-          id="sholawatList"
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          <!-- Sholawat cards will be inserted here -->
-        </div>
-      </main>
     </div>
 
-    <!-- Bookmarks Content -->
-    <div id="bookmarksContent" class="hidden">
-      <div
-        class="bg-gradient-to-b from-emerald-600 to-emerald-500 text-white py-12"
-      >
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold mb-4">Sholawat Tersimpan</h2>
-            <p class="text-emerald-100">Kumpulan sholawat yang anda simpan</p>
-          </div>
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-12">
+        <div id="sholawatList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Sholawat cards will be inserted here -->
         </div>
-      </div>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-12">
-        <div
-          id="bookmarksList"
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          <!-- Bookmarked sholawat will be inserted here -->
-        </div>
-      </div>
-    </div>
+    </main>
 
     <!-- Loading Indicator -->
-    <div
-      id="loading"
-      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
-      <div class="bg-white p-5 rounded-lg">
-        <div
-          class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent"
-        ></div>
-      </div>
+    <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-5 rounded-lg">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent"></div>
+        </div>
     </div>
 
     <!-- Detail Modal -->
-    <div
-      id="detailModal"
-      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
-      <div
-        class="bg-white rounded-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto scrollbar-hide"
-      >
-        <div class="p-6">
-          <div
-            class="flex justify-between items-start border-b border-gray-200 pb-4"
-          >
-            <h2 id="modalTitle" class="text-2xl font-bold text-gray-900"></h2>
-            <button
-              onclick="closeModal()"
-              class="text-gray-400 hover:text-gray-500"
-            >
-              <svg
-                class="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-          <div id="modalContent" class="mt-6">
-            <!-- Modal content will be inserted here -->
-          </div>
+    <div id="detailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto scrollbar-hide">
+            <div class="p-6">
+                <div class="flex justify-between items-start border-b border-gray-200 pb-4">
+                    <h2 id="modalTitle" class="text-2xl font-bold text-gray-900"></h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500 transition-colors duration-200">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="modalContent" class="mt-6">
+                    <!-- Modal content will be inserted here -->
+                </div>
+            </div>
         </div>
-      </div>
     </div>
 
     <!-- Offline Status -->
-    <div
-      id="offlineStatus"
-      class="hidden fixed bottom-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg"
-    >
-      Anda sedang offline
+    <div id="offlineStatus" class="hidden fixed bottom-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg">
+        Anda sedang offline
     </div>
 
     <!-- Footer -->
     <footer class="bg-emerald-600 text-white py-8">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center">
-          <p>Made with ❤️ for Jayyid Saputra</p>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p>Made with ❤️ for Jayyid Saputra</p>
+            </div>
         </div>
-      </div>
     </footer>
 
     <!-- Scripts -->
     <script>
-      // Check offline status
-      window.addEventListener("online", function () {
-        document.getElementById("offlineStatus").classList.add("hidden");
-      });
+        // Check offline status
+        window.addEventListener('online', function() {
+            document.getElementById('offlineStatus').classList.add('hidden');
+        });
+        
+        window.addEventListener('offline', function() {
+            document.getElementById('offlineStatus').classList.remove('hidden');
+        });
 
-      window.addEventListener("offline", function () {
-        document.getElementById("offlineStatus").classList.remove("hidden");
-      });
-
-      // Tab switching logic
-      // Navigation handling
-      document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function () {
         const homeLink = document.getElementById("homeLink");
         const bookmarksTab = document.getElementById("bookmarksTab");
         const homeContent = document.getElementById("homeContent");
@@ -310,7 +201,6 @@
         });
       });
     </script>
-    <script src="bookmarks.js"></script>
     <script src="app.js"></script>
-  </body>
+</body>
 </html>
