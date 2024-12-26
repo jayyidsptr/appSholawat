@@ -59,20 +59,17 @@
     <!-- Header -->
     <header class="bg-emerald-600 text-white sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center space-x-8">
-            <!-- Logo/Home Link -->
+        <div class="flex justify-between h-16 items-center">
+          <div class="flex-1 flex items-center space-x-6">
             <button
               id="homeLink"
               class="text-xl font-bold hover:text-emerald-100 transition-colors duration-200"
             >
               E-Sholawat
             </button>
-
-            <!-- Bookmark Button -->
             <button
               id="bookmarksTab"
-              class="nav-tab flex items-center px-4 py-2 hover:bg-white/10 transition-all duration-200 rounded-lg"
+              class="nav-tab flex items-center px-4 py-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
             >
               <svg
                 class="w-5 h-5 mr-2"
@@ -90,26 +87,12 @@
               Bookmark
             </button>
           </div>
-
-          <!-- Install Button -->
-          <div class="flex items-center">
+          <div class="flex items-center space-x-4">
             <button
               id="installButton"
-              class="hidden px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+              class="hidden px-4 py-2 bg-white text-emerald-600 rounded-md font-medium hover:bg-emerald-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
+              Install App
             </button>
           </div>
         </div>
