@@ -1,4 +1,7 @@
+// Initialize BookmarksManager
+const bookmarksManager = new BookmarksManager();
 
+// Service Worker Registration
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js')
         .then(registration => {
@@ -7,42 +10,35 @@ if ('serviceWorker' in navigator) {
         .catch(error => {
             console.log('Service Worker registration failed:', error);
         });
-  }
+}
 
-  // PWA Install Handler
+// PWA Install Handler
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent Chrome 67 and earlier from automatically showing the prompt
     e.preventDefault();
-    // Stash the event so it can be triggered later
     deferredPrompt = e;
-    // Show the install button
     const installButton = document.getElementById('installButton');
     if (installButton) {
         installButton.classList.remove('hidden');
         installButton.addEventListener('click', async () => {
-            // Hide the app provided install promotion
             installButton.classList.add('hidden');
-            // Show the install prompt
             deferredPrompt.prompt();
-            // Wait for the user to respond to the prompt
             const { outcome } = await deferredPrompt.userChoice;
             console.log(`User response to the install prompt: ${outcome}`);
-            // We've used the prompt, and can't use it again, throw it away
             deferredPrompt = null;
         });
     }
 });
 
-// API Functions
+// API Configuration
 const API_BASE_URL = 'https://db-sholawat.vercel.app/api';
 
+// Latest Sholawat Functions
 async function fetchLatestSholawat() {
     try {
         const response = await fetch(`${API_BASE_URL}/sholawat`);
         const data = await response.json();
-        // Get latest 3 sholawat
         const latestSholawat = data
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             .slice(0, 3);
@@ -50,6 +46,24 @@ async function fetchLatestSholawat() {
     } catch (error) {
         console.error('Error fetching latest sholawat:', error);
     }
+}
+
+function renderLatestSholawat(sholawatList) {
+    const container = document.getElementById('latestSholawat');
+    container.innerHTML = '';
+
+    sholawatList.forEach(sholawat => {
+        const card = document.createElement('div');
+        card.className = 'bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-6 hover:bg-opacity-20 transition-all duration-200 cursor-pointer';
+        card.onclick = () => showDetail(sholawat.id);
+        card.innerHTML = `
+            <div class="text-sm text-emerald-200 mb-2">${sholawat.kategori || 'Tidak ada kategori'}</div>
+            <h3 class="text-xl font-semibold mb-3">${sholawat.judul}</h3>
+            <p class="text-emerald-100 text-sm mb-4">${sholawat.author || 'Unknown'}</p>
+            <div class="text-right arabic-text text-lg">${sholawat.lirik[0].arab}</div>
+        `;
+        container.appendChild(card);
+    });
 }
 
 // Categories Functions
@@ -78,40 +92,18 @@ function renderCategories(categories) {
     const select = document.getElementById('categoryFilter');
     if (!select) return;
     
-    // Reset select content
     select.innerHTML = '<option value="">Semua Kategori</option>';
-    
-    // Sort categories alphabetically
-    // Since we have strings, we can sort them directly
     categories.sort((a, b) => a.localeCompare(b));
     
-    // Add categories to select
     categories.forEach(category => {
         const option = document.createElement('option');
-        option.value = category;      // The category is already a string
-        option.textContent = category; // Use the string directly
+        option.value = category;
+        option.textContent = category;
         select.appendChild(option);
     });
 }
 
-function renderLatestSholawat(sholawatList) {
-    const container = document.getElementById('latestSholawat');
-    container.innerHTML = '';
-
-    sholawatList.forEach(sholawat => {
-        const card = document.createElement('div');
-        card.className = 'bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-6 hover:bg-opacity-20 transition-all duration-200 cursor-pointer';
-        card.onclick = () => showDetail(sholawat.id);
-        card.innerHTML = `
-            <div class="text-sm text-emerald-200 mb-2">${sholawat.kategori || 'Tidak ada kategori'}</div>
-            <h3 class="text-xl font-semibold mb-3">${sholawat.judul}</h3>
-            <p class="text-emerald-100 text-sm mb-4">${sholawat.author || 'Unknown'}</p>
-            <div class="text-right arabic-text text-lg">${sholawat.lirik[0].arab}</div>
-        `;
-        container.appendChild(card);
-    });
-}
-
+// Main Sholawat Functions with Offline Support
 async function fetchSholawat(search = '', category = '') {
     showLoading();
     try {
@@ -123,7 +115,6 @@ async function fetchSholawat(search = '', category = '') {
         }
         
         if (category?.trim()) {
-            // Category is now a direct string value
             params.append('category', category.trim());
         }
         
@@ -131,14 +122,25 @@ async function fetchSholawat(search = '', category = '') {
             url += `?${params.toString()}`;
         }
         
-        console.log('Fetching sholawat from:', url);
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            await caches.open('api-cache-v1').then(cache => {
+                cache.put(url, new Response(JSON.stringify(data)));
+            });
+            renderSholawatList(data);
+        } catch (error) {
+            console.log('Fetching from cache...');
+            const cache = await caches.open('api-cache-v1');
+            const cachedResponse = await cache.match(url);
+            if (cachedResponse) {
+                const data = await cachedResponse.json();
+                renderSholawatList(data);
+            } else {
+                throw new Error('No cached data available');
+            }
         }
-        
-        const data = await response.json();
-        renderSholawatList(data);
     } catch (error) {
         console.error('Error fetching sholawat:', error);
         showError('Gagal mengambil data sholawat');
@@ -148,7 +150,7 @@ async function fetchSholawat(search = '', category = '') {
     }
 }
 
-function renderSholawatList(sholawatList) {
+async function renderSholawatList(sholawatList) {
     const container = document.getElementById('sholawatList');
     container.innerHTML = '';
 
@@ -164,7 +166,9 @@ function renderSholawatList(sholawatList) {
         return;
     }
 
-    sholawatList.forEach(sholawat => {
+    for (const sholawat of sholawatList) {
+        const isBookmarked = await bookmarksManager.isBookmarked(sholawat.id);
+        
         const card = document.createElement('div');
         card.className = 'bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200';
         card.innerHTML = `
@@ -174,13 +178,11 @@ function renderSholawatList(sholawatList) {
                         <h3 class="text-xl font-semibold text-gray-900">${sholawat.judul}</h3>
                         <p class="mt-1 text-sm text-emerald-600">${sholawat.kategori || 'Tidak ada kategori'}</p>
                     </div>
-                    ${sholawat.youtube_link ? `
-                        <a href="${sholawat.youtube_link}" target="_blank" class="text-red-600 hover:text-red-700">
-                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                            </svg>
-                        </a>
-                    ` : ''}
+                    <button class="bookmark-btn p-2 rounded-full hover:bg-gray-100" data-id="${sholawat.id}">
+                        <svg class="w-6 h-6 ${isBookmarked ? 'text-emerald-600' : 'text-gray-400'}" fill="${isBookmarked ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                        </svg>
+                    </button>
                 </div>
                 <div class="text-right arabic-text text-lg text-gray-800 mb-4">${sholawat.lirik[0].arab}</div>
                 <div class="text-sm text-gray-600 mb-4">${sholawat.lirik[0].latin}</div>
@@ -193,15 +195,51 @@ function renderSholawatList(sholawatList) {
                 </div>
             </div>
         `;
+
+        // Add bookmark button event listener
+        const bookmarkBtn = card.querySelector('.bookmark-btn');
+        bookmarkBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (await bookmarksManager.isBookmarked(sholawat.id)) {
+                await bookmarksManager.removeBookmark(sholawat.id);
+                bookmarkBtn.querySelector('svg').classList.remove('text-emerald-600');
+                bookmarkBtn.querySelector('svg').classList.add('text-gray-400');
+                bookmarkBtn.querySelector('svg').setAttribute('fill', 'none');
+            } else {
+                await bookmarksManager.addBookmark(sholawat);
+                bookmarkBtn.querySelector('svg').classList.add('text-emerald-600');
+                bookmarkBtn.querySelector('svg').classList.remove('text-gray-400');
+                bookmarkBtn.querySelector('svg').setAttribute('fill', 'currentColor');
+            }
+        });
+
         container.appendChild(card);
-    });
+    }
 }
 
+// Detail Modal Functions
 async function showDetail(id) {
     showLoading();
     try {
-        const response = await fetch(`${API_BASE_URL}/sholawat/${id}`);
-        const sholawat = await response.json();
+        let sholawat;
+        try {
+            const response = await fetch(`${API_BASE_URL}/sholawat/${id}`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            sholawat = await response.json();
+            // Cache the detail response
+            await caches.open('api-cache-v1').then(cache => {
+                cache.put(`${API_BASE_URL}/sholawat/${id}`, new Response(JSON.stringify(sholawat)));
+            });
+        } catch (error) {
+            console.log('Fetching detail from cache...');
+            const cache = await caches.open('api-cache-v1');
+            const cachedResponse = await cache.match(`${API_BASE_URL}/sholawat/${id}`);
+            if (cachedResponse) {
+                sholawat = await cachedResponse.json();
+            } else {
+                throw new Error('No cached detail available');
+            }
+        }
         
         document.getElementById('modalTitle').textContent = sholawat.judul;
         
@@ -287,6 +325,19 @@ async function showDetail(id) {
     }
 }
 
+// UI Helper Functions
+function closeModal() {
+    document.getElementById('detailModal').classList.add('hidden');
+}
+
+function showLoading() {
+    document.getElementById('loading').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loading').classList.add('hidden');
+}
+
 function showError(message) {
     const existingError = document.querySelector('.error-toast');
     if (existingError) {
@@ -306,20 +357,6 @@ function showError(message) {
     
     document.body.appendChild(errorDiv);
     
-    // Add fade-in animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(100%); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-out;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Remove after 3 seconds
     setTimeout(() => {
         errorDiv.style.opacity = '0';
         errorDiv.style.transform = 'translateY(100%)';
@@ -328,16 +365,19 @@ function showError(message) {
     }, 3000);
 }
 
-function closeModal() {
-    document.getElementById('detailModal').classList.add('hidden');
-}
+// Bookmarks Tab
+function addBookmarksTab() {
+    const nav = document.querySelector('nav .flex-1');
+    nav.innerHTML += `
+        <button id="showBookmarks" class="ml-4 px-4 py-2 text-white hover:bg-emerald-700 rounded-lg transition-colors duration-200">
+            Bookmarks
+        </button>
+    `;
 
-function showLoading() {
-    document.getElementById('loading').classList.remove('hidden');
-}
-
-function hideLoading() {
-    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('showBookmarks').addEventListener('click', async () => {
+        const bookmarks = await bookmarksManager.getBookmarks();
+        renderSholawatList(bookmarks);
+    });
 }
 
 // Event Listeners
@@ -369,4 +409,5 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchLatestSholawat();
     fetchCategories();
     fetchSholawat();
+    addBookmarksTab();
 });
