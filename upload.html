@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Sholawat - Database Sholawat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="manifest.json">
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between">
+                <div class="flex space-x-7">
+                    <a href="index.html" class="flex items-center py-4">
+                        <span class="font-semibold text-gray-700 text-lg">Database Sholawat</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Form Upload -->
+        <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-6">Upload Sholawat Baru</h1>
+            
+            <form id="uploadForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="judul">
+                        Judul Sholawat
+                    </label>
+                    <input type="text" id="judul" name="judul" required
+                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="images">
+                        Gambar Lirik
+                    </label>
+                    <input type="file" id="images" name="images" multiple accept="image/*"
+                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="kategori">
+                        Kategori
+                    </label>
+                    <input type="text" id="kategori" name="kategori"
+                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="nada">
+                        Nada
+                    </label>
+                    <input type="text" id="nada" name="nada"
+                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <button type="submit" id="submitBtn"
+                    class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400">
+                    Upload Sholawat
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://db-sholawat.vercel.app/api'; // Sesuaikan dengan URL API Anda
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengunggah...';
+
+            try {
+                const formData = new FormData();
+                
+                // Ambil data form
+                const sholawatData = {
+                    judul: document.getElementById('judul').value,
+                    kategori: document.getElementById('kategori').value,
+                    nada: document.getElementById('nada').value
+                };
+
+                // Tambahkan data JSON ke FormData
+                formData.append('data', JSON.stringify(sholawatData));
+
+                // Tambahkan file gambar
+                const imageFiles = document.getElementById('images').files;
+                for (let i = 0; i < imageFiles.length; i++) {
+                    formData.append('images', imageFiles[i]);
+                }
+
+                // Kirim ke server
+                const response = await fetch(`${API_URL}/api/sholawat`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengunggah sholawat');
+                }
+
+                const result = await response.json();
+                alert('Sholawat berhasil ditambahkan!');
+                
+                // Reset form
+                e.target.reset();
+                
+                // Redirect ke halaman utama setelah berhasil
+                window.location.href = 'index.html';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Upload Sholawat';
+            }
+        });
+    </script>
+</body>
+</html>

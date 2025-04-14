@@ -279,113 +279,180 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Detail Modal Functions
-async function showDetail(id) {
-    showLoading();
-    try {
-        let sholawat;
-        try {
-            const response = await fetch(`${API_BASE_URL}/sholawat/${id}`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            sholawat = await response.json();
-            // Cache the detail response
-            await caches.open('api-cache-v1').then(cache => {
-                cache.put(`${API_BASE_URL}/sholawat/${id}`, new Response(JSON.stringify(sholawat)));
-            });
-        } catch (error) {
-            console.log('Fetching detail from cache...');
-            const cache = await caches.open('api-cache-v1');
-            const cachedResponse = await cache.match(`${API_BASE_URL}/sholawat/${id}`);
-            if (cachedResponse) {
-                sholawat = await cachedResponse.json();
-            } else {
-                throw new Error('No cached detail available');
-            }
-        }
-        
-        document.getElementById('modalTitle').textContent = sholawat.judul;
-        
-        const content = document.getElementById('modalContent');
-        content.innerHTML = `
-            <div class="space-y-6">
-                <div class="bg-emerald-50 p-4 rounded-lg">
-                    <h3 class="font-semibold text-gray-900 mb-3">Informasi</h3>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                            </svg>
-                            <span class="text-gray-600">Kategori:</span>
-                            <span class="ml-2 text-gray-900">${sholawat.kategori || '-'}</span>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span class="text-gray-600">Author:</span>
-                            <span class="ml-2 text-gray-900">${sholawat.author || '-'}</span>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                            </svg>
-                            <span class="text-gray-600">Nada:</span>
-                            <span class="ml-2 text-gray-900">${sholawat.nada || '-'}</span>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                            <span class="text-gray-600">Source:</span>
-                            <span class="ml-2 text-gray-900">${sholawat.source || '-'}</span>
-                        </div>
-                    </div>
-                </div>
+// Tambahkan fungsi baru untuk menampilkan detail sholawat dengan gambar
+function displaySholawatDetail(sholawat) {
+    const modalContent = document.querySelector('.modal-content');
+    
+    let imageHtml = '';
+    if (sholawat.imageLyric && sholawat.imageLyric.length > 0) {
+        imageHtml = `
+            <div id="imageViewer" class="relative max-w-2xl mx-auto mt-4">
+                <img src="${API_URL}${sholawat.imageLyric[0]}" 
+                     alt="Lirik 1" 
+                     class="w-full rounded-lg shadow-lg"
+                     id="currentImage">
                 
-                <div>
-                    <h3 class="font-semibold text-gray-900 mb-4">Lirik</h3>
-                    <div class="space-y-6">
-                        ${sholawat.lirik.map((bait, index) => `
-                            <div class="bg-gray-50 p-6 rounded-lg">
-                                <div class="text-right text-2xl arabic-text leading-loose" dir="rtl">${bait.arab}</div>
-                                <div class="mt-3 text-emerald-600 font-medium">${bait.latin}</div>
-                                <div class="mt-2 text-gray-600">${bait.terjemahan}</div>
-                            </div>
-                        `).join('')}
+                ${sholawat.imageLyric.length > 1 ? `
+                    <div class="absolute inset-x-0 bottom-0 flex justify-between p-4">
+                        <button onclick="prevImage()" 
+                                class="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg hover:bg-opacity-75">
+                            ←
+                        </button>
+                        <span class="text-white bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                            <span id="imageCounter">1</span> / ${sholawat.imageLyric.length}
+                        </span>
+                        <button onclick="nextImage()" 
+                                class="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg hover:bg-opacity-75">
+                            →
+                        </button>
                     </div>
-                </div>
-
-                <div class="flex flex-wrap gap-4 mt-6">
-                    ${sholawat.youtube_link ? `
-                        <a href="${sholawat.youtube_link}" target="_blank" 
-                           class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200">
-                            <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                            </svg>
-                            Tonton di YouTube
-                        </a>
-                    ` : ''}
-                    ${sholawat.audio_link ? `
-                        <a href="${sholawat.audio_link}" target="_blank" 
-                           class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200">
-                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                            </svg>
-                            Dengarkan Audio
-                        </a>
-                    ` : ''}
-                </div>
+                ` : ''}
             </div>
         `;
-        
-        document.getElementById('detailModal').classList.remove('hidden');
-    } catch (error) {
-        console.error('Error fetching sholawat detail:', error);
-        showError('Gagal mengambil detail sholawat');
-    } finally {
-        hideLoading();
     }
+
+    modalContent.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4">${sholawat.judul}</h2>
+        ${imageHtml}
+        <div class="mt-4">
+            <p class="text-gray-700"><strong>Kategori:</strong> ${sholawat.kategori || '-'}</p>
+            <p class="text-gray-700"><strong>Nada:</strong> ${sholawat.nada || '-'}</p>
+            ${sholawat.source ? `<p class="text-gray-700"><strong>Sumber:</strong> ${sholawat.source}</p>` : ''}
+            ${sholawat.author ? `<p class="text-gray-700"><strong>Penulis:</strong> ${sholawat.author}</p>` : ''}
+        </div>
+    `;
+
+    // Tambahkan variabel untuk image viewer
+    if (sholawat.imageLyric && sholawat.imageLyric.length > 0) {
+        window.currentImageIndex = 0;
+        window.images = sholawat.imageLyric;
+        
+        window.prevImage = function() {
+            window.currentImageIndex = (window.currentImageIndex - 1 + window.images.length) % window.images.length;
+            updateImage();
+        };
+        
+        window.nextImage = function() {
+            window.currentImageIndex = (window.currentImageIndex + 1) % window.images.length;
+            updateImage();
+        };
+        
+        function updateImage() {
+            document.getElementById('currentImage').src = `${API_URL}${window.images[window.currentImageIndex]}`;
+            document.getElementById('imageCounter').textContent = window.currentImageIndex + 1;
+        }
+    }
+
+    openModal();
 }
+
+// // Detail Modal Functions
+// async function showDetail(id) {
+//     showLoading();
+//     try {
+//         let sholawat;
+//         try {
+//             const response = await fetch(`${API_BASE_URL}/sholawat/${id}`);
+//             if (!response.ok) throw new Error('Network response was not ok');
+//             sholawat = await response.json();
+//             // Cache the detail response
+//             await caches.open('api-cache-v1').then(cache => {
+//                 cache.put(`${API_BASE_URL}/sholawat/${id}`, new Response(JSON.stringify(sholawat)));
+//             });
+//         } catch (error) {
+//             console.log('Fetching detail from cache...');
+//             const cache = await caches.open('api-cache-v1');
+//             const cachedResponse = await cache.match(`${API_BASE_URL}/sholawat/${id}`);
+//             if (cachedResponse) {
+//                 sholawat = await cachedResponse.json();
+//             } else {
+//                 throw new Error('No cached detail available');
+//             }
+//         }
+        
+//         document.getElementById('modalTitle').textContent = sholawat.judul;
+        
+//         const content = document.getElementById('modalContent');
+//         content.innerHTML = `
+//             <div class="space-y-6">
+//                 <div class="bg-emerald-50 p-4 rounded-lg">
+//                     <h3 class="font-semibold text-gray-900 mb-3">Informasi</h3>
+//                     <div class="grid grid-cols-2 gap-4 text-sm">
+//                         <div class="flex items-center">
+//                             <svg class="h-5 w-5 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+//                             </svg>
+//                             <span class="text-gray-600">Kategori:</span>
+//                             <span class="ml-2 text-gray-900">${sholawat.kategori || '-'}</span>
+//                         </div>
+//                         <div class="flex items-center">
+//                             <svg class="h-5 w-5 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+//                             </svg>
+//                             <span class="text-gray-600">Author:</span>
+//                             <span class="ml-2 text-gray-900">${sholawat.author || '-'}</span>
+//                         </div>
+//                         <div class="flex items-center">
+//                             <svg class="h-5 w-5 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+//                             </svg>
+//                             <span class="text-gray-600">Nada:</span>
+//                             <span class="ml-2 text-gray-900">${sholawat.nada || '-'}</span>
+//                         </div>
+//                         <div class="flex items-center">
+//                             <svg class="h-5 w-5 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+//                             </svg>
+//                             <span class="text-gray-600">Source:</span>
+//                             <span class="ml-2 text-gray-900">${sholawat.source || '-'}</span>
+//                         </div>
+//                     </div>
+//                 </div>
+                
+//                 <div>
+//                     <h3 class="font-semibold text-gray-900 mb-4">Lirik</h3>
+//                     <div class="space-y-6">
+//                         ${sholawat.lirik.map((bait, index) => `
+//                             <div class="bg-gray-50 p-6 rounded-lg">
+//                                 <div class="text-right text-2xl arabic-text leading-loose" dir="rtl">${bait.arab}</div>
+//                                 <div class="mt-3 text-emerald-600 font-medium">${bait.latin}</div>
+//                                 <div class="mt-2 text-gray-600">${bait.terjemahan}</div>
+//                             </div>
+//                         `).join('')}
+//                     </div>
+//                 </div>
+
+//                 <div class="flex flex-wrap gap-4 mt-6">
+//                     ${sholawat.youtube_link ? `
+//                         <a href="${sholawat.youtube_link}" target="_blank" 
+//                            class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200">
+//                             <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+//                                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+//                             </svg>
+//                             Tonton di YouTube
+//                         </a>
+//                     ` : ''}
+//                     ${sholawat.audio_link ? `
+//                         <a href="${sholawat.audio_link}" target="_blank" 
+//                            class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200">
+//                             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+//                             </svg>
+//                             Dengarkan Audio
+//                         </a>
+//                     ` : ''}
+//                 </div>
+//             </div>
+//         `;
+        
+//         document.getElementById('detailModal').classList.remove('hidden');
+//     } catch (error) {
+//         console.error('Error fetching sholawat detail:', error);
+//         showError('Gagal mengambil detail sholawat');
+//     } finally {
+//         hideLoading();
+//     }
+// }
 
 // UI Helper Functions
 function closeModal() {
